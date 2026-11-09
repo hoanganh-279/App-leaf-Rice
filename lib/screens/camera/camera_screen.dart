@@ -175,6 +175,14 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     final fields = context.watch<AppDataProvider>().fields;
+    // Danh sách ruộng có thể được tải lại (đối tượng mới), nên luôn chọn lại
+    // theo id để dropdown không bị lệch giá trị đang chọn.
+    if (fields.isNotEmpty) {
+      _selectedField = fields.firstWhere(
+        (f) => f.id == _selectedField?.id,
+        orElse: () => fields.first,
+      );
+    }
     final canUseGallery =
         !_processing && fields.isNotEmpty && _selectedField != null;
     final canCapture = canUseGallery && _cameraReady;
@@ -205,8 +213,9 @@ class _CameraScreenState extends State<CameraScreen> {
                         ),
                       )
                     else
-                      DropdownButtonFormField<FieldModel>(
-                        initialValue: _selectedField,
+                      DropdownButtonFormField<String>(
+                        key: ValueKey(_selectedField?.id),
+                        initialValue: _selectedField?.id,
                         decoration: const InputDecoration(
                           labelText: 'Chọn thửa ruộng',
                           prefixIcon: Icon(Icons.grass, color: AppColors.primary),
@@ -214,12 +223,17 @@ class _CameraScreenState extends State<CameraScreen> {
                         items: fields
                             .map(
                               (f) => DropdownMenuItem(
-                                value: f,
+                                value: f.id,
                                 child: Text(f.name),
                               ),
                             )
                             .toList(),
-                        onChanged: (v) => setState(() => _selectedField = v),
+                        onChanged: (id) => setState(() {
+                          _selectedField = fields.firstWhere(
+                            (f) => f.id == id,
+                            orElse: () => fields.first,
+                          );
+                        }),
                       ),
                     const SizedBox(height: 16),
                     Expanded(
